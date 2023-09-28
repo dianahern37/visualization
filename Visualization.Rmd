@@ -7,10 +7,16 @@ output: github_document
 
 ```{r}
 library(tidyverse)
+library(ggridges)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6
+)
 ```
 
 ```{r}
-library(ggridges)
+
 ```
 
 
@@ -83,10 +89,10 @@ ggp_weather =
 
 ggp_weather
 
-ggsave("visualization/ggp_weather.pdf", ggp_weather)
+ggsave("./visualization/ggp_weather.pdf", ggp_weather)
 ```
 
-```{r, fig.width=12, fig.height=12}
+```{r, fig.width=12, fig.height=12, fig.asp=6}
 ggp_weather
 ```
 
