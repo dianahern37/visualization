@@ -3,6 +3,8 @@ Visualization part 2
 Diana Hernandez
 2023-10-03
 
+## Setting options
+
 ``` r
 library(tidyverse)
 ```
@@ -17,6 +19,24 @@ library(tidyverse)
     ## ✖ dplyr::filter() masks stats::filter()
     ## ✖ dplyr::lag()    masks stats::lag()
     ## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+
+``` r
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
 
 ``` r
 weather_df = 
@@ -86,7 +106,7 @@ weather_df |>
 
     ## Warning: Removed 456 rows containing missing values (`geom_point()`).
 
-![](visualization_part_2_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+<img src="visualization_part_2_files/figure-gfm/unnamed-chunk-3-1.png" width="90%" />
 
 what about colors…
 
@@ -112,6 +132,149 @@ weather_df |>
 
     ## Warning: Removed 33 rows containing missing values (`geom_point()`).
 
-![](visualization_part_2_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+<img src="visualization_part_2_files/figure-gfm/unnamed-chunk-4-1.png" width="90%" />
 
 ## Themes
+
+order matters for themes
+
+theme_bw() resets entire plot in terms of themes, should go first
+
+also theme_classic for no gridlines
+
+theme_minimal too
+
+``` r
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color=name)) + 
+  geom_point(alpha = .5) +
+  labs(
+    title = "Temperature plot",
+    x = "Min daily temp (Degrees C)",
+    y = "Max daily temp",
+    color = "Location",
+    caption = "Max vs min daily temp in three locations; data from rnoaa"
+  ) + 
+  viridis::scale_color_viridis(discrete = TRUE) + 
+  theme_bw() +
+  theme(legend.position = "bottom") 
+```
+
+    ## Warning: Removed 33 rows containing missing values (`geom_point()`).
+
+<img src="visualization_part_2_files/figure-gfm/unnamed-chunk-5-1.png" width="90%" />
+
+## Data argument..
+
+if you put it in ggplot, it will assume to put it in geom_point() and
+geom_smoth()
+
+``` r
+weather_df |> 
+  ggplot(aes(x = date, y = tmax, color = name)) + 
+  geom_point() +
+  geom_smooth()
+```
+
+    ## `geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'
+
+    ## Warning: Removed 33 rows containing non-finite values (`stat_smooth()`).
+
+    ## Warning: Removed 33 rows containing missing values (`geom_point()`).
+
+<img src="visualization_part_2_files/figure-gfm/unnamed-chunk-6-1.png" width="90%" />
+
+``` r
+nyc_weather_df = 
+   weather_df |> 
+  filter(name == "CentralPark_NY")
+
+hawaii_weather_df = 
+  weather_df |> 
+  filter(name == "Molokai_HI")
+
+
+ggplot(nyc_weather_df, aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  geom_line(data = hawaii_weather_df)
+```
+
+    ## Warning: Removed 5 rows containing missing values (`geom_point()`).
+
+    ## Warning: Removed 5 rows containing missing values (`geom_line()`).
+
+<img src="visualization_part_2_files/figure-gfm/unnamed-chunk-6-2.png" width="90%" />
+
+## ‘patchwork’
+
+facet allows to make visual comparisons
+
+``` r
+ weather_df |>  
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  facet_grid(. ~ name)
+```
+
+    ## Warning: Removed 33 rows containing missing values (`geom_point()`).
+
+<img src="visualization_part_2_files/figure-gfm/unnamed-chunk-7-1.png" width="90%" />
+
+``` r
+ggp_temp_scatter =
+  weather_df |> 
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point(alpha = .5) + 
+  theme(legend.positon = "none")
+
+ggp_prcp_density = 
+  weather_df |> 
+  filter(prcp > 25) |> 
+  ggplot(aes(x = prcp, fill = name)) +
+  geom_density(alpha = .5) +
+  theme(legend.positon = "none")
+
+ggp_tmax_date =
+  weather_df |> 
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  theme(legend.position = "bottom")
+```
+
+## data manipulation
+
+convert to factor for alphabetical order
+
+``` r
+weather_df |> 
+  mutate(
+    name = fct_relevel(name, c("Molokai_HI", "CentralPark_NY", "Waterhole_WA"))
+  ) |> 
+  ggplot(aes(x = name, y = tmax)) +
+  geom_boxplot()
+```
+
+    ## Warning: Removed 33 rows containing non-finite values (`stat_boxplot()`).
+
+<img src="visualization_part_2_files/figure-gfm/unnamed-chunk-9-1.png" width="90%" />
+
+``` r
+weather_df |> 
+  mutate(
+    name = fct_reorder(name, tmax)
+  ) |> 
+  ggplot(aes(x = name, y = tmax, fill = name)) +
+  geom_violin()
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `name = fct_reorder(name, tmax)`.
+    ## Caused by warning:
+    ## ! `fct_reorder()` removing 33 missing values.
+    ## ℹ Use `.na_rm = TRUE` to silence this message.
+    ## ℹ Use `.na_rm = FALSE` to preserve NAs.
+
+    ## Warning: Removed 33 rows containing non-finite values (`stat_ydensity()`).
+
+<img src="visualization_part_2_files/figure-gfm/unnamed-chunk-9-2.png" width="90%" />
